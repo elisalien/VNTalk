@@ -3,23 +3,36 @@
   min-width: 320px;
   background: var(--bg-panel);
   border-right: 1px solid var(--border-color);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .control-group {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border-color);
 }
 
 .control-group label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 10px;
-  font-size: 12px;
+  gap: 3px;
+  margin-bottom: 8px;
+  font-size: 11px;
   color: var(--text-secondary);
+}
+
+.checkbox-label {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
 }
 
 .control-group input[type="text"],
@@ -29,8 +42,8 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   color: var(--text-primary);
-  padding: 8px;
-  font-size: 13px;
+  padding: 7px 8px;
+  font-size: 12px;
   font-family: var(--font-ui);
   outline: none;
   transition: border-color 0.2s;
@@ -42,8 +55,18 @@
   border-color: var(--accent);
 }
 
+.control-group input[type="color"] {
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-input);
+  cursor: pointer;
+  padding: 2px;
+}
+
 .control-group input[type="file"] {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
 }
 
@@ -52,15 +75,31 @@
   color: #fff;
   border: none;
   border-radius: 3px;
-  padding: 4px 10px;
-  font-size: 11px;
+  padding: 4px 8px;
+  font-size: 10px;
   cursor: pointer;
-  margin-right: 8px;
+  margin-right: 6px;
 }
 
 .control-group input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
+  height: 16px;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--text-secondary);
+  margin-top: -2px;
+}
+
+.preset-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 4px;
 }
 
 /* Dialogue editor */
@@ -72,7 +111,7 @@
 
 #dialogue-input {
   resize: vertical;
-  min-height: 60px;
+  min-height: 50px;
 }
 
 #add-line-btn {
@@ -80,8 +119,8 @@
   color: #fff;
   border: none;
   border-radius: 4px;
-  padding: 8px;
-  font-size: 13px;
+  padding: 7px;
+  font-size: 12px;
   font-weight: 600;
   transition: background 0.2s;
 }
@@ -93,28 +132,48 @@
 /* Dialogue list */
 #dialogue-list {
   list-style: none;
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   padding: 0;
 }
 
 .dialogue-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   background: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  padding: 6px 8px;
-  font-size: 12px;
-  gap: 6px;
+  padding: 5px 6px;
+  font-size: 11px;
+  gap: 5px;
+  cursor: grab;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.dialogue-item:hover {
+  border-color: #444;
 }
 
 .dialogue-item.active {
   border-color: var(--accent);
-  background: rgba(91, 141, 217, 0.1);
+  background: rgba(91, 141, 217, 0.08);
+}
+
+.dialogue-item.dragging {
+  opacity: 0.4;
+}
+
+.dialogue-item.drag-over {
+  border-color: var(--accent);
+  border-style: dashed;
+}
+
+.dialogue-item-num {
+  color: var(--text-secondary);
+  font-size: 10px;
+  min-width: 18px;
 }
 
 .dialogue-item-text {
@@ -124,18 +183,31 @@
   white-space: nowrap;
 }
 
+.dialogue-item-badge {
+  font-size: 9px;
+  color: var(--accent);
+  background: rgba(91, 141, 217, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.dialogue-item-badge:empty {
+  display: none;
+}
+
 .dialogue-item-actions {
   display: flex;
-  gap: 2px;
+  gap: 1px;
   flex-shrink: 0;
 }
 
 .dialogue-item-actions button {
   background: none;
   border: none;
-  font-size: 14px;
-  padding: 2px 4px;
-  opacity: 0.6;
+  font-size: 12px;
+  padding: 1px 3px;
+  opacity: 0.5;
   transition: opacity 0.2s;
 }
 
@@ -143,11 +215,67 @@
   opacity: 1;
 }
 
+/* Animation picker popup */
+.anim-picker-popup {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  background: var(--bg-dark);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+}
+
+.anim-picker-title {
+  width: 100%;
+  font-size: 11px;
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.anim-picker-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+
+.anim-picker-btn:hover {
+  border-color: var(--accent);
+  background: rgba(91, 141, 217, 0.1);
+}
+
+.anim-picker-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.anim-picker-close {
+  width: 100%;
+  margin-top: 6px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
 /* Playback controls */
 .playback-controls {
   display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 4px;
 }
 
 .playback-controls button {
@@ -157,7 +285,7 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 8px 4px;
-  font-size: 12px;
+  font-size: 11px;
   transition: border-color 0.2s, background 0.2s;
 }
 
@@ -166,32 +294,144 @@
   background: rgba(91, 141, 217, 0.1);
 }
 
-.auto-scroll-label {
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 8px !important;
-  cursor: pointer;
+/* Profiles */
+.profile-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
-.auto-scroll-label input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
+.profile-actions button,
+.profile-actions .file-btn {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 4px;
+  padding: 7px 6px;
+  font-size: 11px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.profile-actions button:hover,
+.profile-actions .file-btn:hover {
+  border-color: var(--accent);
+}
+
+.profile-save-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.profile-save-row input {
+  flex: 1;
+}
+
+.profile-save-row button {
+  background: var(--success);
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.profile-row span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-row button {
+  background: none;
+  border: none;
+  font-size: 13px;
+  opacity: 0.6;
+  padding: 2px;
+}
+
+.profile-row button:hover {
+  opacity: 1;
+}
+
+.no-profiles {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
 }
 
 #screenshot-btn {
   width: 100%;
-  margin-top: 10px;
   background: #2d6a30;
   color: #fff;
   border: none;
   border-radius: 4px;
   padding: 10px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   transition: background 0.2s;
 }
 
 #screenshot-btn:hover {
   background: #3a8c3e;
+}
+
+#record-btn {
+  width: 100%;
+  margin-top: 6px;
+  background: #8b2252;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+#record-btn:hover {
+  background: #a82d65;
+}
+
+#stop-record-btn {
+  width: 100%;
+  margin-top: 6px;
+  background: #d9534f;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse-record 1s ease-in-out infinite;
+}
+
+@keyframes pulse-record {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.record-status {
+  font-size: 10px;
+  color: #d9534f;
+  text-align: center;
+  margin-top: 4px;
+  min-height: 14px;
 }

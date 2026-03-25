@@ -1,24 +1,41 @@
 import { getState, update } from './state.js';
 import { addLine, renderDialogueList } from './dialogue.js';
 import { startPlayback, stopPlayback, advance } from './typewriter.js';
-import { initRenderer } from './renderer.js';
+import { initRenderer, setOutputFormat } from './renderer.js';
 import { capture } from './screenshot.js';
+import { initTabs } from './tabs.js';
+import { presets, applyPreset } from './presets.js';
+import { initAnimations } from './animations.js';
+import { initFX } from './fx.js';
+import { startRecording, stopRecording, isRecording } from './recorder.js';
+import {
+  exportProfile,
+  importProfile,
+  saveToLocalStorage,
+  loadFromLocalStorage,
+  deleteLocalProfile,
+  getLocalProfiles,
+  syncControlsToState,
+} from './profiles.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initTabs();
   initRenderer();
+  initAnimations();
+  initFX();
 
-  // --- Character upload ---
-  const charUpload = document.getElementById('character-upload');
-  charUpload.addEventListener('change', (e) => {
+  // Apply default preset
+  applyPreset('nes');
+
+  // ============ ASSETS TAB ============
+
+  document.getElementById('character-upload').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    update({ characterImg: url });
+    update({ characterImg: URL.createObjectURL(file) });
   });
 
-  // --- Background upload ---
-  const bgUpload = document.getElementById('background-upload');
-  bgUpload.addEventListener('change', (e) => {
+  document.getElementById('background-upload').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
@@ -26,98 +43,227 @@ document.addEventListener('DOMContentLoaded', () => {
     update({ backgroundSrc: url, backgroundType: isVideo ? 'video' : 'image' });
   });
 
-  // --- Character name ---
-  const nameInput = document.getElementById('character-name');
-  nameInput.addEventListener('input', (e) => {
+  document.getElementById('output-format').addEventListener('change', (e) => {
+    setOutputFormat(e.target.value);
+  });
+
+  // Profiles
+  document.getElementById('export-profile-btn').addEventListener('click', exportProfile);
+
+  document.getElementById('import-profile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      await importProfile(file);
+    } catch (err) {
+      alert('Erreur import: ' + err.message);
+    }
+  });
+
+  document.getElementById('save-profile-btn').addEventListener('click', () => {
+    const name = document.getElementById('profile-name').value.trim();
+    if (!name) return;
+    saveToLocalStorage(name);
+    document.getElementById('profile-name').value = '';
+    renderProfileList();
+  });
+
+  // ============ CHARACTER TAB ============
+
+  document.getElementById('character-name').addEventListener('input', (e) => {
     update({ characterName: e.target.value });
   });
 
-  // --- Character position X ---
-  const posSelect = document.getElementById('character-position');
-  posSelect.addEventListener('change', (e) => {
-    update({ position: e.target.value });
+  bindSlider('position-x', 'positionX', '%');
+  bindSlider('position-y', 'positionY', '%');
+  bindSlider('character-scale', 'characterScale', '%');
+
+  document.getElementById('character-flip').addEventListener('change', (e) => {
+    update({ characterFlip: e.target.checked });
   });
 
-  // --- Character position Y ---
-  const ySlider = document.getElementById('character-y');
-  const yValue = document.getElementById('character-y-value');
-  ySlider.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value, 10);
-    yValue.textContent = val + '%';
-    update({ positionY: val });
+  document.getElementById('idle-animation').addEventListener('change', (e) => {
+    update({ idleAnimation: e.target.value });
   });
 
-  // --- Character scale ---
-  const scaleSlider = document.getElementById('character-scale');
-  const scaleValue = document.getElementById('character-scale-value');
-  scaleSlider.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value, 10);
-    scaleValue.textContent = val + '%';
-    update({ characterScale: val });
+  bindSlider('idle-speed', 'idleSpeed', 'x', true);
+  bindSlider('idle-intensity', 'idleIntensity', '%');
+
+  // ============ DIALOGUE BOX TAB ============
+
+  const presetSelect = document.getElementById('preset-select');
+  const presetDesc = document.getElementById('preset-description');
+  presetSelect.addEventListener('change', (e) => {
+    applyPreset(e.target.value);
+    syncControlsToState();
+    if (presetDesc) presetDesc.textContent = presets[e.target.value]?.description || '';
+  });
+  // Show initial description
+  presetDesc.textContent = presets.nes.description;
+
+  bindSlider('box-position-x', 'boxPositionX', '%');
+  bindSlider('box-position-y', 'boxPositionY', '%');
+  bindSlider('box-width', 'boxWidth', '%');
+  bindSlider('box-height', 'boxHeight', '%');
+  bindSlider('box-opacity', 'boxOpacity', '%');
+  bindSlider('box-padding', 'boxPadding', 'px');
+  bindSlider('box-border-radius', 'boxBorderRadius', 'px');
+  bindSlider('font-size', 'fontSize', 'px');
+  bindSlider('name-size', 'nameSize', 'px');
+  bindSlider('line-height', 'lineHeight', '', true);
+
+  document.getElementById('text-color').addEventListener('input', (e) => {
+    update({ textColor: e.target.value });
+  });
+  document.getElementById('name-color').addEventListener('input', (e) => {
+    update({ nameColor: e.target.value });
   });
 
-  // --- Box style ---
-  const boxSelect = document.getElementById('box-style');
-  boxSelect.addEventListener('change', (e) => {
-    update({ boxStyle: e.target.value });
-  });
-
-  // --- Add dialogue line ---
+  // Dialogue lines
   const dialogueInput = document.getElementById('dialogue-input');
   const addLineBtn = document.getElementById('add-line-btn');
 
   addLineBtn.addEventListener('click', () => {
-    const success = addLine(dialogueInput.value);
-    if (success) {
+    if (addLine(dialogueInput.value)) {
       dialogueInput.value = '';
       dialogueInput.focus();
     }
   });
 
-  // Also add on Enter (without Shift)
   dialogueInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      const success = addLine(dialogueInput.value);
-      if (success) {
+      if (addLine(dialogueInput.value)) {
         dialogueInput.value = '';
       }
     }
   });
 
-  // --- Playback controls ---
+  // ============ FX TAB ============
+
+  document.getElementById('crt-enabled').addEventListener('change', (e) => {
+    update({ crtEnabled: e.target.checked });
+  });
+
+  bindSlider('scanline-opacity', 'scanlineOpacity', '%');
+  bindSlider('scanline-density', 'scanlineDensity', 'px');
+  bindSlider('vignette-intensity', 'vignetteIntensity', '%');
+
+  document.getElementById('glitch-enabled').addEventListener('change', (e) => {
+    update({ glitchEnabled: e.target.checked });
+  });
+
+  bindSlider('glitch-intensity', 'glitchIntensity', '%');
+  bindSlider('glitch-frequency', 'glitchFrequency', '');
+  bindSlider('chromatic-aberration', 'chromaticAberration', 'px');
+  bindSlider('film-grain', 'filmGrain', '%');
+  bindSlider('bloom', 'bloom', '%');
+  bindSlider('pixelate', 'pixelate', '%');
+
+  document.getElementById('color-temp').addEventListener('input', (e) => {
+    update({ colorTemp: parseInt(e.target.value, 10) });
+  });
+
+  bindSlider('saturation', 'saturation', '%');
+  bindSlider('contrast', 'contrast', '%');
+  bindSlider('brightness-ctrl', 'brightness', '%');
+
+  // ============ PLAYBACK TAB ============
+
   document.getElementById('play-btn').addEventListener('click', startPlayback);
   document.getElementById('next-btn').addEventListener('click', advance);
   document.getElementById('stop-btn').addEventListener('click', stopPlayback);
 
-  // Click on scene to advance
   document.getElementById('scene-container').addEventListener('click', () => {
-    const state = getState();
-    if (state.isPlaying) {
-      advance();
-    }
+    if (getState().isPlaying) advance();
   });
 
-  // --- Auto scroll ---
-  const autoScrollCheck = document.getElementById('auto-scroll');
-  const autoSpeedLabel = document.getElementById('auto-speed-label');
-  const autoSpeedSlider = document.getElementById('auto-speed');
-  const autoSpeedValue = document.getElementById('auto-speed-value');
+  bindSlider('type-speed', 'typeSpeed', 'ms');
 
-  autoScrollCheck.addEventListener('change', (e) => {
+  document.getElementById('transition-select').addEventListener('change', (e) => {
+    update({ transition: e.target.value });
+  });
+
+  document.getElementById('auto-scroll').addEventListener('change', (e) => {
     update({ autoScroll: e.target.checked });
-    autoSpeedLabel.style.display = e.target.checked ? '' : 'none';
   });
 
-  autoSpeedSlider.addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    autoSpeedValue.textContent = val + 's';
-    update({ autoSpeed: val });
-  });
+  bindSlider('auto-speed', 'autoSpeed', 's', true);
 
-  // --- Screenshot ---
   document.getElementById('screenshot-btn').addEventListener('click', capture);
 
-  // Initial dialogue list render
+  // Video recording
+  const recordBtn = document.getElementById('record-btn');
+  const stopRecordBtn = document.getElementById('stop-record-btn');
+
+  recordBtn.addEventListener('click', () => {
+    startRecording();
+    recordBtn.style.display = 'none';
+    stopRecordBtn.style.display = '';
+  });
+
+  stopRecordBtn.addEventListener('click', () => {
+    stopRecording();
+    stopRecordBtn.style.display = 'none';
+    recordBtn.style.display = '';
+  });
+
+  // ============ INIT ============
   renderDialogueList();
+  renderProfileList();
 });
+
+// Utility: bind a range slider to state
+function bindSlider(elementId, stateKey, suffix, isFloat = false) {
+  const el = document.getElementById(elementId);
+  const valEl = document.getElementById(elementId + '-value');
+  if (!el) return;
+
+  el.addEventListener('input', (e) => {
+    const val = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10);
+    if (valEl) valEl.textContent = val + suffix;
+    update({ [stateKey]: val });
+  });
+}
+
+function renderProfileList() {
+  const container = document.getElementById('profile-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const profiles = getLocalProfiles();
+  const names = Object.keys(profiles);
+
+  if (names.length === 0) {
+    container.innerHTML = '<p class="no-profiles">Aucun profil sauvegardé</p>';
+    return;
+  }
+
+  names.forEach((name) => {
+    const row = document.createElement('div');
+    row.className = 'profile-row';
+
+    const label = document.createElement('span');
+    label.textContent = name;
+
+    const loadBtn = document.createElement('button');
+    loadBtn.textContent = '📂';
+    loadBtn.title = 'Charger';
+    loadBtn.addEventListener('click', () => {
+      loadFromLocalStorage(name);
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '🗑️';
+    delBtn.title = 'Supprimer';
+    delBtn.addEventListener('click', () => {
+      deleteLocalProfile(name);
+      renderProfileList();
+    });
+
+    row.appendChild(label);
+    row.appendChild(loadBtn);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}

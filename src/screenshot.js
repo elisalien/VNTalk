@@ -1,24 +1,23 @@
 import html2canvas from 'html2canvas';
+import { getOutputFormat } from './renderer.js';
 
 export async function capture() {
   const scene = document.getElementById('scene-container');
   if (!scene) return;
 
-  // Temporarily hide CRT overlay for cleaner capture (optional)
-  const crt = document.getElementById('crt-overlay');
-  const hadCrt = crt && crt.style.display !== 'none';
+  const fmt = getOutputFormat();
 
   try {
     const canvas = await html2canvas(scene, {
-      width: 1920,
-      height: 1080,
+      width: fmt.width,
+      height: fmt.height,
       scale: 1,
       useCORS: true,
       backgroundColor: '#000',
     });
 
     const link = document.createElement('a');
-    link.download = 'vntalk-screenshot.png';
+    link.download = `vntalk-${fmt.width}x${fmt.height}-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   } catch (err) {
