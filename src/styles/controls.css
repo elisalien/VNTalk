@@ -1,0 +1,197 @@
+#controls {
+  width: 320px;
+  min-width: 320px;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.control-group {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.control-group label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.control-group input[type="text"],
+.control-group select,
+.control-group textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  padding: 8px;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.control-group input[type="text"]:focus,
+.control-group select:focus,
+.control-group textarea:focus {
+  border-color: var(--accent);
+}
+
+.control-group input[type="file"] {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.control-group input[type="file"]::file-selector-button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* Dialogue editor */
+#dialogue-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#dialogue-input {
+  resize: vertical;
+  min-height: 60px;
+}
+
+#add-line-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+#add-line-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Dialogue list */
+#dialogue-list {
+  list-style: none;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+}
+
+.dialogue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.dialogue-item.active {
+  border-color: var(--accent);
+  background: rgba(91, 141, 217, 0.1);
+}
+
+.dialogue-item-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialogue-item-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dialogue-item-actions button {
+  background: none;
+  border: none;
+  font-size: 14px;
+  padding: 2px 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.dialogue-item-actions button:hover {
+  opacity: 1;
+}
+
+/* Playback controls */
+.playback-controls {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.playback-controls button {
+  flex: 1;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 4px;
+  font-size: 12px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.playback-controls button:hover {
+  border-color: var(--accent);
+  background: rgba(91, 141, 217, 0.1);
+}
+
+.auto-scroll-label {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer;
+}
+
+.auto-scroll-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+#screenshot-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: #2d6a30;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+#screenshot-btn:hover {
+  background: #3a8c3e;
+}
