@@ -1,39 +1,44 @@
+/* CRT Scanlines */
 #crt-overlay {
   position: absolute;
   inset: 0;
-  z-index: 10;
+  z-index: 20;
   pointer-events: none;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.15) 2px,
-      rgba(0, 0, 0, 0.15) 4px
-    );
   mix-blend-mode: multiply;
 }
 
-#crt-overlay::before {
-  content: '';
+/* Vignette */
+#vignette-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 50%,
-    rgba(0, 0, 0, 0.45) 100%
-  );
+  z-index: 21;
+  pointer-events: none;
 }
 
-#crt-overlay::after {
-  content: '';
+/* Chromatic Aberration */
+#chromatic-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 255, 100, 0.015);
-  animation: crt-flicker 0.1s infinite alternate;
+  z-index: 22;
+  pointer-events: none;
+  display: none;
 }
 
-@keyframes crt-flicker {
-  from { opacity: 0.97; }
-  to { opacity: 1; }
+/* Bloom */
+#bloom-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 19;
+  pointer-events: none;
+  display: none;
+}
+
+/* Film grain */
+#fx-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 23;
+  pointer-events: none;
+  display: none;
+  mix-blend-mode: overlay;
 }

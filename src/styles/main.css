@@ -6,14 +6,16 @@
 
 :root {
   --bg-dark: #0a0a0f;
-  --bg-panel: #12121a;
-  --bg-input: #1a1a2e;
+  --bg-panel: #111118;
+  --bg-input: #1a1a28;
+  --bg-hover: #222235;
   --border-color: #2a2a3e;
-  --text-primary: #e0e0e0;
-  --text-secondary: #888;
+  --text-primary: #d8d8e0;
+  --text-secondary: #777;
   --accent: #5b8dd9;
   --accent-hover: #7aa5e8;
   --danger: #d9534f;
+  --success: #4caf50;
   --font-pixel: 'Press Start 2P', monospace;
   --font-ui: system-ui, -apple-system, sans-serif;
 }
@@ -23,28 +25,28 @@ html, body {
   background: var(--bg-dark);
   color: var(--text-primary);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 13px;
   overflow: hidden;
 }
 
 #app {
   display: flex;
   height: 100vh;
-  gap: 0;
 }
 
 h1 {
   font-family: var(--font-pixel);
-  font-size: 13px;
+  font-size: 11px;
   color: var(--accent);
   text-align: center;
-  padding: 16px 0;
+  padding: 12px 10px;
   border-bottom: 1px solid var(--border-color);
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 h2 {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
   color: var(--text-secondary);
   letter-spacing: 1px;
@@ -54,4 +56,18 @@ h2 {
 button {
   cursor: pointer;
   font-family: var(--font-ui);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
 }

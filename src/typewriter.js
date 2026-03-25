@@ -1,10 +1,10 @@
 import { getState, update, subscribe } from './state.js';
 import { renderDialogueList } from './dialogue.js';
+import { triggerAnimation } from './animations.js';
 
 let charIndex = 0;
 let typewriterTimer = null;
 let autoAdvanceTimer = null;
-const TYPE_SPEED = 45; // ms per character
 
 const dialogueTextEl = () => document.getElementById('dialogue-text');
 const dialogueNameEl = () => document.getElementById('dialogue-name');
@@ -18,7 +18,7 @@ export function startPlayback() {
   update({ isPlaying: true, currentLineIndex: 0 });
   renderDialogueList();
   showDialogueBox();
-  typeLine(0);
+  playLine(0);
 }
 
 export function stopPlayback() {
@@ -43,9 +43,9 @@ export function advance() {
   if (typewriterTimer) {
     clearTimeout(typewriterTimer);
     typewriterTimer = null;
-    const text = state.dialogueLines[state.currentLineIndex];
-    if (text) {
-      dialogueTextEl().textContent = text;
+    const line = state.dialogueLines[state.currentLineIndex];
+    if (line) {
+      dialogueTextEl().textContent = line.text;
     }
     scheduleAutoAdvance();
     return;
@@ -59,31 +59,64 @@ export function advance() {
 
   update({ currentLineIndex: nextIndex });
   renderDialogueList();
-  typeLine(nextIndex);
+  playLine(nextIndex);
 }
 
-function typeLine(index) {
+function playLine(index) {
   const state = getState();
-  const text = state.dialogueLines[index];
-  if (!text) return;
+  const line = state.dialogueLines[index];
+  if (!line) return;
 
   const nameEl = dialogueNameEl();
   const textEl = dialogueTextEl();
-  if (nameEl) nameEl.textContent = state.characterName || '';
-  if (textEl) textEl.textContent = '';
+  if (!textEl) return;
 
-  charIndex = 0;
-  typeNextChar(text);
+  if (nameEl) nameEl.textContent = state.characterName || '';
+
+  // Apply transition
+  applyTransition(textEl, state.transition, () => {
+    textEl.textContent = '';
+    charIndex = 0;
+
+    // Trigger per-line animation
+    if (line.animation && line.animation !== 'none') {
+      triggerAnimation(line.animation);
+    }
+
+    typeNextChar(line.text, state.typeSpeed);
+  });
 }
 
-function typeNextChar(text) {
+function applyTransition(el, type, callback) {
+  if (type === 'fade') {
+    el.style.transition = 'opacity 0.25s';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      callback();
+      el.style.opacity = '1';
+    }, 250);
+  } else if (type === 'slide') {
+    el.style.transition = 'transform 0.2s, opacity 0.2s';
+    el.style.transform = 'translateY(-10px)';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      callback();
+      el.style.transform = 'translateY(0)';
+      el.style.opacity = '1';
+    }, 200);
+  } else {
+    callback();
+  }
+}
+
+function typeNextChar(text, speed) {
   const textEl = dialogueTextEl();
   if (!textEl) return;
 
   if (charIndex < text.length) {
     textEl.textContent += text[charIndex];
     charIndex++;
-    typewriterTimer = setTimeout(() => typeNextChar(text), TYPE_SPEED);
+    typewriterTimer = setTimeout(() => typeNextChar(text, speed), speed);
   } else {
     typewriterTimer = null;
     scheduleAutoAdvance();

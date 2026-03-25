@@ -6,91 +6,365 @@
   <title>VN Dialogue Maker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles/main.css" />
+  <link rel="stylesheet" href="/src/styles/tabs.css" />
   <link rel="stylesheet" href="/src/styles/controls.css" />
   <link rel="stylesheet" href="/src/styles/scene.css" />
   <link rel="stylesheet" href="/src/styles/crt.css" />
+  <link rel="stylesheet" href="/src/styles/animations.css" />
 </head>
 <body>
   <div id="app">
-    <!-- LEFT PANEL: Controls -->
+    <!-- LEFT PANEL -->
     <aside id="controls">
       <h1>VN Dialogue Maker</h1>
 
-      <section class="control-group">
-        <h2>Assets</h2>
-        <label>
-          Personnage (PNG/GIF)
-          <input type="file" id="character-upload" accept=".png,.gif" />
-        </label>
-        <label>
-          Background (PNG/GIF/MP4)
-          <input type="file" id="background-upload" accept=".png,.gif,.mp4" />
-        </label>
-      </section>
+      <!-- Tab bar -->
+      <nav class="tab-bar">
+        <button class="tab-btn active" data-tab="assets" title="Assets">📁</button>
+        <button class="tab-btn" data-tab="character" title="Personnage">🧑</button>
+        <button class="tab-btn" data-tab="dialoguebox" title="Dialogue Box">💬</button>
+        <button class="tab-btn" data-tab="fx" title="FX & Post-prod">✨</button>
+        <button class="tab-btn" data-tab="playback" title="Lecture">▶️</button>
+      </nav>
 
-      <section class="control-group">
-        <h2>Configuration</h2>
-        <label>
-          Nom du personnage
-          <input type="text" id="character-name" placeholder="Nom..." />
-        </label>
-        <label>
-          Position X
-          <select id="character-position">
-            <option value="left">Gauche</option>
-            <option value="center" selected>Centre</option>
-            <option value="right">Droite</option>
+      <!-- ==================== ASSETS TAB ==================== -->
+      <div class="tab-panel active" id="tab-assets">
+        <section class="control-group">
+          <h2>Fichiers</h2>
+          <label>
+            Personnage (PNG/GIF)
+            <input type="file" id="character-upload" accept=".png,.gif" />
+          </label>
+          <label>
+            Background (PNG/GIF/MP4)
+            <input type="file" id="background-upload" accept=".png,.gif,.mp4" />
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Format de sortie</h2>
+          <select id="output-format">
+            <option value="16:9" selected>1920×1080 (16:9)</option>
+            <option value="9:16">1080×1920 (9:16)</option>
+            <option value="1:1">1080×1080 (1:1)</option>
+            <option value="4:3">1440×1080 (4:3)</option>
+            <option value="21:9">2560×1080 (21:9)</option>
           </select>
-        </label>
-        <label>
-          Position Y
-          <input type="range" id="character-y" min="-50" max="100" value="10" step="1" />
-          <span id="character-y-value">10%</span>
-        </label>
-        <label>
-          Échelle personnage
-          <input type="range" id="character-scale" min="10" max="200" value="100" step="1" />
-          <span id="character-scale-value">100%</span>
-        </label>
-        <label>
-          Style dialogue box
-          <select id="box-style">
-            <option value="bottom-full" selected>Pleine largeur</option>
-            <option value="bottom-left">Bas gauche</option>
-            <option value="bottom-right">Bas droite</option>
+        </section>
+
+        <section class="control-group">
+          <h2>Profils</h2>
+          <div class="profile-actions">
+            <button id="export-profile-btn" type="button">📤 Exporter JSON</button>
+            <label class="file-btn">
+              📥 Importer JSON
+              <input type="file" id="import-profile" accept=".json" style="display:none" />
+            </label>
+          </div>
+          <div class="profile-local">
+            <div class="profile-save-row">
+              <input type="text" id="profile-name" placeholder="Nom du profil..." />
+              <button id="save-profile-btn" type="button">💾</button>
+            </div>
+            <div id="profile-list"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==================== CHARACTER TAB ==================== -->
+      <div class="tab-panel" id="tab-character">
+        <section class="control-group">
+          <h2>Identité</h2>
+          <label>
+            Nom du personnage
+            <input type="text" id="character-name" placeholder="Nom..." />
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Position</h2>
+          <label>
+            Position X
+            <input type="range" id="position-x" min="0" max="100" value="50" step="1" />
+            <span id="position-x-value">50%</span>
+          </label>
+          <label>
+            Position Y
+            <input type="range" id="position-y" min="-50" max="120" value="20" step="1" />
+            <span id="position-y-value">20%</span>
+          </label>
+          <label>
+            Échelle
+            <input type="range" id="character-scale" min="10" max="300" value="100" step="1" />
+            <span id="character-scale-value">100%</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="character-flip" />
+            Miroir horizontal
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Animation idle</h2>
+          <label>
+            Type
+            <select id="idle-animation">
+              <option value="none">Aucune</option>
+              <option value="breathing">Respiration</option>
+              <option value="float">Flottement</option>
+              <option value="bounce">Rebond</option>
+              <option value="sway">Balancement</option>
+            </select>
+          </label>
+          <label>
+            Vitesse
+            <input type="range" id="idle-speed" min="0.2" max="3" value="1" step="0.1" />
+            <span id="idle-speed-value">1x</span>
+          </label>
+          <label>
+            Intensité
+            <input type="range" id="idle-intensity" min="10" max="100" value="50" step="5" />
+            <span id="idle-intensity-value">50%</span>
+          </label>
+        </section>
+      </div>
+
+      <!-- ==================== DIALOGUE BOX TAB ==================== -->
+      <div class="tab-panel" id="tab-dialoguebox">
+        <section class="control-group">
+          <h2>Preset</h2>
+          <select id="preset-select">
+            <option value="nes">NES Classic</option>
+            <option value="snes">SNES RPG</option>
+            <option value="ps1">PS1 JRPG</option>
+            <option value="gameboy">Game Boy</option>
+            <option value="vnmodern">Visual Novel</option>
+            <option value="terminal">Retro Terminal</option>
+            <option value="kawaii">Kawaii Cutecore</option>
           </select>
-        </label>
-      </section>
+          <p class="preset-desc" id="preset-description"></p>
+        </section>
 
-      <section class="control-group">
-        <h2>Lignes de dialogue</h2>
-        <div id="dialogue-editor">
-          <textarea id="dialogue-input" rows="3" placeholder="Écris une ligne de dialogue..."></textarea>
-          <button id="add-line-btn" type="button">+ Ajouter ligne</button>
-        </div>
-        <ol id="dialogue-list"></ol>
-      </section>
+        <section class="control-group">
+          <h2>Position & Taille</h2>
+          <label>
+            Position X
+            <input type="range" id="box-position-x" min="10" max="90" value="50" step="1" />
+            <span id="box-position-x-value">50%</span>
+          </label>
+          <label>
+            Position Y
+            <input type="range" id="box-position-y" min="10" max="98" value="88" step="1" />
+            <span id="box-position-y-value">88%</span>
+          </label>
+          <label>
+            Largeur
+            <input type="range" id="box-width" min="30" max="100" value="90" step="1" />
+            <span id="box-width-value">90%</span>
+          </label>
+          <label>
+            Hauteur
+            <input type="range" id="box-height" min="10" max="60" value="25" step="1" />
+            <span id="box-height-value">25%</span>
+          </label>
+          <label>
+            Opacité
+            <input type="range" id="box-opacity" min="0" max="100" value="85" step="1" />
+            <span id="box-opacity-value">85%</span>
+          </label>
+          <label>
+            Padding
+            <input type="range" id="box-padding" min="4" max="40" value="16" step="1" />
+            <span id="box-padding-value">16px</span>
+          </label>
+          <label>
+            Border radius
+            <input type="range" id="box-border-radius" min="0" max="30" value="0" step="1" />
+            <span id="box-border-radius-value">0px</span>
+          </label>
+        </section>
 
-      <section class="control-group">
-        <h2>Lecture</h2>
-        <div class="playback-controls">
-          <button id="play-btn" type="button">▶ Play</button>
-          <button id="next-btn" type="button">⏭ Next</button>
-          <button id="stop-btn" type="button">⏹ Stop</button>
-        </div>
-        <label class="auto-scroll-label">
-          <input type="checkbox" id="auto-scroll" />
-          Défilement auto
-        </label>
-        <label id="auto-speed-label" style="display:none;">
-          Vitesse auto (s)
-          <input type="range" id="auto-speed" min="1" max="10" value="3" step="0.5" />
-          <span id="auto-speed-value">3s</span>
-        </label>
-        <button id="screenshot-btn" type="button">📸 Screenshot</button>
-      </section>
+        <section class="control-group">
+          <h2>Typographie</h2>
+          <label>
+            Taille texte
+            <input type="range" id="font-size" min="8" max="32" value="14" step="1" />
+            <span id="font-size-value">14px</span>
+          </label>
+          <label>
+            Taille nom
+            <input type="range" id="name-size" min="8" max="32" value="16" step="1" />
+            <span id="name-size-value">16px</span>
+          </label>
+          <label>
+            Interligne
+            <input type="range" id="line-height" min="1" max="3" value="1.8" step="0.1" />
+            <span id="line-height-value">1.8</span>
+          </label>
+          <label>
+            Couleur texte
+            <input type="color" id="text-color" value="#ffffff" />
+          </label>
+          <label>
+            Couleur nom
+            <input type="color" id="name-color" value="#5b8dd9" />
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Lignes de dialogue</h2>
+          <div id="dialogue-editor">
+            <textarea id="dialogue-input" rows="3" placeholder="Écris une ligne de dialogue..."></textarea>
+            <button id="add-line-btn" type="button">+ Ajouter ligne</button>
+          </div>
+          <ol id="dialogue-list"></ol>
+        </section>
+      </div>
+
+      <!-- ==================== FX TAB ==================== -->
+      <div class="tab-panel" id="tab-fx">
+        <section class="control-group">
+          <h2>Scanlines & CRT</h2>
+          <label class="checkbox-label">
+            <input type="checkbox" id="crt-enabled" checked />
+            Activer CRT
+          </label>
+          <label>
+            Opacité scanlines
+            <input type="range" id="scanline-opacity" min="0" max="50" value="15" step="1" />
+            <span id="scanline-opacity-value">15%</span>
+          </label>
+          <label>
+            Densité scanlines
+            <input type="range" id="scanline-density" min="1" max="6" value="2" step="1" />
+            <span id="scanline-density-value">2px</span>
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Vignette</h2>
+          <label>
+            Intensité
+            <input type="range" id="vignette-intensity" min="0" max="80" value="45" step="1" />
+            <span id="vignette-intensity-value">45%</span>
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Glitch</h2>
+          <label class="checkbox-label">
+            <input type="checkbox" id="glitch-enabled" />
+            Activer Glitch
+          </label>
+          <label>
+            Intensité
+            <input type="range" id="glitch-intensity" min="0" max="100" value="30" step="1" />
+            <span id="glitch-intensity-value">30%</span>
+          </label>
+          <label>
+            Fréquence
+            <input type="range" id="glitch-frequency" min="1" max="10" value="3" step="1" />
+            <span id="glitch-frequency-value">3</span>
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Effets avancés</h2>
+          <label>
+            Aberration chromatique
+            <input type="range" id="chromatic-aberration" min="0" max="10" value="0" step="1" />
+            <span id="chromatic-aberration-value">0px</span>
+          </label>
+          <label>
+            Film grain
+            <input type="range" id="film-grain" min="0" max="100" value="0" step="5" />
+            <span id="film-grain-value">0%</span>
+          </label>
+          <label>
+            Bloom / Glow
+            <input type="range" id="bloom" min="0" max="100" value="0" step="5" />
+            <span id="bloom-value">0%</span>
+          </label>
+          <label>
+            Pixelisation
+            <input type="range" id="pixelate" min="0" max="100" value="0" step="5" />
+            <span id="pixelate-value">0%</span>
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Color Grading</h2>
+          <label>
+            Température
+            <input type="range" id="color-temp" min="0" max="100" value="50" step="1" />
+            <span class="range-labels"><span>Froid</span><span>Chaud</span></span>
+          </label>
+          <label>
+            Saturation
+            <input type="range" id="saturation" min="0" max="200" value="100" step="1" />
+            <span id="saturation-value">100%</span>
+          </label>
+          <label>
+            Contraste
+            <input type="range" id="contrast" min="50" max="200" value="100" step="1" />
+            <span id="contrast-value">100%</span>
+          </label>
+          <label>
+            Luminosité
+            <input type="range" id="brightness-ctrl" min="50" max="200" value="100" step="1" />
+            <span id="brightness-value">100%</span>
+          </label>
+        </section>
+      </div>
+
+      <!-- ==================== PLAYBACK TAB ==================== -->
+      <div class="tab-panel" id="tab-playback">
+        <section class="control-group">
+          <h2>Contrôles</h2>
+          <div class="playback-controls">
+            <button id="play-btn" type="button">▶ Play</button>
+            <button id="next-btn" type="button">⏭ Next</button>
+            <button id="stop-btn" type="button">⏹ Stop</button>
+          </div>
+        </section>
+
+        <section class="control-group">
+          <h2>Typewriter</h2>
+          <label>
+            Vitesse (ms/caractère)
+            <input type="range" id="type-speed" min="10" max="120" value="45" step="5" />
+            <span id="type-speed-value">45ms</span>
+          </label>
+          <label>
+            Transition entre lignes
+            <select id="transition-select">
+              <option value="instant">Instantané</option>
+              <option value="fade">Fondu</option>
+              <option value="slide">Glisser</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Défilement auto</h2>
+          <label class="checkbox-label">
+            <input type="checkbox" id="auto-scroll" />
+            Activer
+          </label>
+          <label>
+            Pause entre lignes
+            <input type="range" id="auto-speed" min="1" max="10" value="3" step="0.5" />
+            <span id="auto-speed-value">3s</span>
+          </label>
+        </section>
+
+        <section class="control-group">
+          <h2>Export</h2>
+          <button id="screenshot-btn" type="button">📸 Screenshot</button>
+        </section>
+      </div>
     </aside>
 
     <!-- RIGHT PANEL: Scene Preview -->
@@ -98,11 +372,19 @@
       <div id="scene-container">
         <div id="background-layer"></div>
         <div id="character-layer"></div>
-        <div id="dialogue-box" class="bottom-full" style="display:none;">
+        <div id="dialogue-box" style="display:none;">
           <div id="dialogue-name"></div>
           <div id="dialogue-text"></div>
+          <div id="dialogue-box-ornament-tl" class="box-ornament"></div>
+          <div id="dialogue-box-ornament-tr" class="box-ornament"></div>
+          <div id="dialogue-box-ornament-bl" class="box-ornament"></div>
+          <div id="dialogue-box-ornament-br" class="box-ornament"></div>
         </div>
         <div id="crt-overlay"></div>
+        <div id="vignette-overlay"></div>
+        <div id="chromatic-overlay"></div>
+        <div id="bloom-overlay"></div>
+        <div id="fx-layer"></div>
       </div>
     </main>
   </div>
