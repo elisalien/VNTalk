@@ -1,4 +1,4 @@
-import { getState, update } from './state.js';
+import { getState, update, subscribe } from './state.js';
 import { addLine, renderDialogueList } from './dialogue.js';
 import { startPlayback, stopPlayback, advance } from './typewriter.js';
 import { initRenderer, setOutputFormat } from './renderer.js';
@@ -197,6 +197,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const stopRecordBtn = document.getElementById('stop-record-btn');
 
   recordBtn.addEventListener('click', () => {
+    // Enable auto-scroll and start playback automatically
+    const autoScrollCheckbox = document.getElementById('auto-scroll');
+    if (!autoScrollCheckbox.checked) {
+      autoScrollCheckbox.checked = true;
+      update({ autoScroll: true });
+    }
+    startPlayback();
     startRecording();
     recordBtn.style.display = 'none';
     stopRecordBtn.style.display = '';
@@ -204,8 +211,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   stopRecordBtn.addEventListener('click', () => {
     stopRecording();
+    stopPlayback();
     stopRecordBtn.style.display = 'none';
     recordBtn.style.display = '';
+  });
+
+  // Auto-stop recording when playback finishes
+  subscribe((state) => {
+    if (!state.isPlaying && isRecording()) {
+      stopRecording();
+      stopRecordBtn.style.display = 'none';
+      recordBtn.style.display = '';
+    }
   });
 
   // ============ INIT ============
