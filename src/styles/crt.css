@@ -1,7 +1,10 @@
 /* CRT Scanlines */
 #crt-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 20;
   pointer-events: none;
   mix-blend-mode: multiply;
@@ -10,7 +13,10 @@
 /* Vignette */
 #vignette-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 21;
   pointer-events: none;
 }
@@ -18,7 +24,10 @@
 /* Chromatic Aberration */
 #chromatic-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 22;
   pointer-events: none;
   display: none;
@@ -27,7 +36,10 @@
 /* Bloom */
 #bloom-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 19;
   pointer-events: none;
   display: none;
@@ -36,7 +48,10 @@
 /* Film grain */
 #fx-layer {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 23;
   pointer-events: none;
   display: none;
