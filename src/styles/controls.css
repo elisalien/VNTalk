@@ -392,3 +392,46 @@
 #screenshot-btn:hover {
   background: #3a8c3e;
 }
+
+#record-btn {
+  width: 100%;
+  margin-top: 6px;
+  background: #8b2252;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+#record-btn:hover {
+  background: #a82d65;
+}
+
+#stop-record-btn {
+  width: 100%;
+  margin-top: 6px;
+  background: #d9534f;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse-record 1s ease-in-out infinite;
+}
+
+@keyframes pulse-record {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.record-status {
+  font-size: 10px;
+  color: #d9534f;
+  text-align: center;
+  margin-top: 4px;
+  min-height: 14px;
+}

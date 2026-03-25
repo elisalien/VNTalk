@@ -7,6 +7,7 @@ import { initTabs } from './tabs.js';
 import { presets, applyPreset } from './presets.js';
 import { initAnimations } from './animations.js';
 import { initFX } from './fx.js';
+import { startRecording, stopRecording, isRecording } from './recorder.js';
 import {
   exportProfile,
   importProfile,
@@ -190,6 +191,22 @@ document.addEventListener('DOMContentLoaded', () => {
   bindSlider('auto-speed', 'autoSpeed', 's', true);
 
   document.getElementById('screenshot-btn').addEventListener('click', capture);
+
+  // Video recording
+  const recordBtn = document.getElementById('record-btn');
+  const stopRecordBtn = document.getElementById('stop-record-btn');
+
+  recordBtn.addEventListener('click', () => {
+    startRecording();
+    recordBtn.style.display = 'none';
+    stopRecordBtn.style.display = '';
+  });
+
+  stopRecordBtn.addEventListener('click', () => {
+    stopRecording();
+    stopRecordBtn.style.display = 'none';
+    recordBtn.style.display = '';
+  });
 
   // ============ INIT ============
   renderDialogueList();
