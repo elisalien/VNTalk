@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VN Dialogue Maker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles/main.css" />
+  <link rel="stylesheet" href="/src/styles/controls.css" />
+  <link rel="stylesheet" href="/src/styles/scene.css" />
+  <link rel="stylesheet" href="/src/styles/crt.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- LEFT PANEL: Controls -->
+    <aside id="controls">
+      <h1>VN Dialogue Maker</h1>
+
+      <section class="control-group">
+        <h2>Assets</h2>
+        <label>
+          Personnage (PNG/GIF)
+          <input type="file" id="character-upload" accept=".png,.gif" />
+        </label>
+        <label>
+          Background (PNG/GIF/MP4)
+          <input type="file" id="background-upload" accept=".png,.gif,.mp4" />
+        </label>
+      </section>
+
+      <section class="control-group">
+        <h2>Configuration</h2>
+        <label>
+          Nom du personnage
+          <input type="text" id="character-name" placeholder="Nom..." />
+        </label>
+        <label>
+          Position X
+          <select id="character-position">
+            <option value="left">Gauche</option>
+            <option value="center" selected>Centre</option>
+            <option value="right">Droite</option>
+          </select>
+        </label>
+        <label>
+          Position Y
+          <input type="range" id="character-y" min="-50" max="100" value="10" step="1" />
+          <span id="character-y-value">10%</span>
+        </label>
+        <label>
+          Échelle personnage
+          <input type="range" id="character-scale" min="10" max="200" value="100" step="1" />
+          <span id="character-scale-value">100%</span>
+        </label>
+        <label>
+          Style dialogue box
+          <select id="box-style">
+            <option value="bottom-full" selected>Pleine largeur</option>
+            <option value="bottom-left">Bas gauche</option>
+            <option value="bottom-right">Bas droite</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="control-group">
+        <h2>Lignes de dialogue</h2>
+        <div id="dialogue-editor">
+          <textarea id="dialogue-input" rows="3" placeholder="Écris une ligne de dialogue..."></textarea>
+          <button id="add-line-btn" type="button">+ Ajouter ligne</button>
+        </div>
+        <ol id="dialogue-list"></ol>
+      </section>
+
+      <section class="control-group">
+        <h2>Lecture</h2>
+        <div class="playback-controls">
+          <button id="play-btn" type="button">▶ Play</button>
+          <button id="next-btn" type="button">⏭ Next</button>
+          <button id="stop-btn" type="button">⏹ Stop</button>
+        </div>
+        <label class="auto-scroll-label">
+          <input type="checkbox" id="auto-scroll" />
+          Défilement auto
+        </label>
+        <label id="auto-speed-label" style="display:none;">
+          Vitesse auto (s)
+          <input type="range" id="auto-speed" min="1" max="10" value="3" step="0.5" />
+          <span id="auto-speed-value">3s</span>
+        </label>
+        <button id="screenshot-btn" type="button">📸 Screenshot</button>
+      </section>
+    </aside>
+
+    <!-- RIGHT PANEL: Scene Preview -->
+    <main id="scene-wrapper">
+      <div id="scene-container">
+        <div id="background-layer"></div>
+        <div id="character-layer"></div>
+        <div id="dialogue-box" class="bottom-full" style="display:none;">
+          <div id="dialogue-name"></div>
+          <div id="dialogue-text"></div>
+        </div>
+        <div id="crt-overlay"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
