@@ -72,7 +72,7 @@ function applyFX(state) {
   if (chromaticLayer) {
     if (state.chromaticAberration > 0) {
       const px = state.chromaticAberration;
-      chromaticLayer.style.display = '';
+      chromaticLayer.style.display = 'block';
       chromaticLayer.style.boxShadow = `
         inset ${px}px 0 0 rgba(255,0,0,0.1),
         inset -${px}px 0 0 rgba(0,0,255,0.1)
@@ -96,11 +96,15 @@ function applyFX(state) {
   const bloomOverlay = document.getElementById('bloom-overlay');
   if (bloomOverlay) {
     if (state.bloom > 0) {
-      bloomOverlay.style.display = '';
-      bloomOverlay.style.backdropFilter = `blur(${state.bloom * 0.5}px) brightness(${100 + state.bloom}%)`;
+      bloomOverlay.style.display = 'block';
+      const bloomFilter = `blur(${state.bloom * 0.5}px) brightness(${100 + state.bloom}%)`;
+      bloomOverlay.style.backdropFilter = bloomFilter;
+      bloomOverlay.style.webkitBackdropFilter = bloomFilter;
       bloomOverlay.style.opacity = state.bloom / 200;
     } else {
       bloomOverlay.style.display = 'none';
+      bloomOverlay.style.backdropFilter = 'none';
+      bloomOverlay.style.webkitBackdropFilter = 'none';
     }
   }
 }
@@ -150,7 +154,7 @@ function applyFilmGrain(state, fxLayer) {
       d[i + 3] = state.filmGrain * 1.5;
     }
     grainCtx.putImageData(imageData, 0, 0);
-    fxLayer.style.display = '';
+    fxLayer.style.display = 'block';
     fxLayer.style.backgroundImage = `url(${grainCanvas.toDataURL()})`;
     fxLayer.style.backgroundSize = '256px 256px';
     fxLayer.style.opacity = state.filmGrain / 100;

@@ -161,13 +161,15 @@ function renderDialogueBox(state) {
   box.style.width = state.boxWidth + '%';
   box.style.height = state.boxHeight + '%';
 
-  // Background color override (when user picks a custom color)
+  // Background with opacity
+  const opacity = (state.boxOpacity ?? 85) / 100;
   if (state.boxBgColor) {
-    const opacity = (state.boxOpacity || 85) / 100;
     box.style.background = hexToRgba(state.boxBgColor, opacity);
   } else {
-    // Use preset bg via CSS var
-    box.style.background = '';
+    // Apply preset bg with user-controlled opacity
+    const presetCSS = getCurrentPresetCSS();
+    const bg = presetCSS['--preset-bg'] || 'rgba(0,0,10,0.85)';
+    box.style.background = applyOpacityToBg(bg, opacity);
   }
 
   // Padding
@@ -201,4 +203,39 @@ function hexToRgba(hex, alpha) {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function applyOpacityToBg(bg, opacity) {
+  if (opacity >= 1) return bg;
+
+  // Hex color: #000000
+  if (/^#[0-9a-f]{3,8}$/i.test(bg.trim())) {
+    return hexToRgba(bg.trim(), opacity);
+  }
+
+  // Simple rgba/rgb (not a gradient)
+  if (/^rgba?\(/.test(bg.trim())) {
+    return bg.replace(/rgba?\(([^)]+)\)/, (_, inner) => {
+      const parts = inner.split(',').map(s => s.trim());
+      if (parts.length === 4) {
+        parts[3] = (parseFloat(parts[3]) * opacity).toFixed(3);
+      } else {
+        parts.push(opacity.toFixed(3));
+      }
+      return `rgba(${parts.join(',')})`;
+    });
+  }
+
+  // Gradient — replace all color values inside
+  let result = bg;
+  result = result.replace(/rgba\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\)/g, (_, r, g, b, a) => {
+    return `rgba(${r.trim()},${g.trim()},${b.trim()},${(parseFloat(a) * opacity).toFixed(3)})`;
+  });
+  result = result.replace(/#([0-9a-f]{6})\b/gi, (_, hex) => {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r},${g},${b},${opacity.toFixed(3)})`;
+  });
+  return result;
 }
