@@ -9,10 +9,18 @@ const sceneContainer = () => document.getElementById('scene-container');
 export const outputFormats = {
   '16:9': { width: 1920, height: 1080, label: '1920×1080 (16:9)' },
   '9:16': { width: 1080, height: 1920, label: '1080×1920 (9:16)' },
+  '4:5': { width: 1080, height: 1350, label: '1080×1350 (4:5)' },
   '1:1': { width: 1080, height: 1080, label: '1080×1080 (1:1)' },
   '4:3': { width: 1440, height: 1080, label: '1440×1080 (4:3)' },
   '21:9': { width: 2560, height: 1080, label: '2560×1080 (21:9)' },
 };
+
+export function setCustomFormat(width, height) {
+  const w = Math.max(100, Math.min(7680, Math.round(width)));
+  const h = Math.max(100, Math.min(7680, Math.round(height)));
+  outputFormats['custom'] = { width: w, height: h, label: `${w}×${h} (custom)` };
+  setOutputFormat('custom');
+}
 
 let currentFormat = '16:9';
 
@@ -153,8 +161,14 @@ function renderDialogueBox(state) {
   box.style.width = state.boxWidth + '%';
   box.style.height = state.boxHeight + '%';
 
-  // Opacity (applied to background, not whole box)
-  // Handled via preset bg + opacity
+  // Background color override (when user picks a custom color)
+  if (state.boxBgColor) {
+    const opacity = (state.boxOpacity || 85) / 100;
+    box.style.background = hexToRgba(state.boxBgColor, opacity);
+  } else {
+    // Use preset bg via CSS var
+    box.style.background = '';
+  }
 
   // Padding
   box.style.padding = state.boxPadding + 'px';
@@ -180,4 +194,11 @@ function renderDialogueBox(state) {
     textEl.style.color = state.textColor;
     textEl.style.lineHeight = state.lineHeight;
   }
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }

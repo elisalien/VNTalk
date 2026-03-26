@@ -27,6 +27,7 @@ export const defaultState = {
   nameSize: 16,
   textColor: '#ffffff',
   nameColor: '#5b8dd9',
+  boxBgColor: '',
   lineHeight: 1.8,
 
   // FX

@@ -1,7 +1,7 @@
 import { getState, update, subscribe } from './state.js';
 import { addLine, renderDialogueList } from './dialogue.js';
 import { startPlayback, stopPlayback, advance } from './typewriter.js';
-import { initRenderer, setOutputFormat } from './renderer.js';
+import { initRenderer, setOutputFormat, setCustomFormat } from './renderer.js';
 import { capture } from './screenshot.js';
 import { initTabs } from './tabs.js';
 import { presets, applyPreset } from './presets.js';
@@ -43,8 +43,22 @@ document.addEventListener('DOMContentLoaded', () => {
     update({ backgroundSrc: url, backgroundType: isVideo ? 'video' : 'image' });
   });
 
-  document.getElementById('output-format').addEventListener('change', (e) => {
-    setOutputFormat(e.target.value);
+  const outputFormatSelect = document.getElementById('output-format');
+  const customResPanel = document.getElementById('custom-resolution');
+
+  outputFormatSelect.addEventListener('change', (e) => {
+    if (e.target.value === 'custom') {
+      customResPanel.style.display = '';
+    } else {
+      customResPanel.style.display = 'none';
+      setOutputFormat(e.target.value);
+    }
+  });
+
+  document.getElementById('apply-custom-res').addEventListener('click', () => {
+    const w = parseInt(document.getElementById('custom-width').value, 10);
+    const h = parseInt(document.getElementById('custom-height').value, 10);
+    if (w && h) setCustomFormat(w, h);
   });
 
   // Profiles
@@ -117,6 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('name-color').addEventListener('input', (e) => {
     update({ nameColor: e.target.value });
+  });
+  document.getElementById('box-bg-color').addEventListener('input', (e) => {
+    update({ boxBgColor: e.target.value });
+  });
+  document.getElementById('reset-box-bg').addEventListener('click', () => {
+    update({ boxBgColor: '' });
+    document.getElementById('box-bg-color').value = '#00000a';
   });
 
   // Dialogue lines
