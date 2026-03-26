@@ -60,7 +60,25 @@ function restoreScene(scene) {
   origSceneStyles = null;
 }
 
+/**
+ * Stop all tracks on the capture stream and release resources.
+ */
+function cleanupResources(scene) {
+  if (captureStream) {
+    captureStream.getTracks().forEach((track) => track.stop());
+    captureStream = null;
+  }
+  captureCanvas = null;
+  captureCtx = null;
+  mediaRecorder = null;
+  recordedChunks = [];
+  if (scene) restoreScene(scene);
+}
+
 export function startRecording() {
+  // Guard against double-start
+  if (recording) return;
+
   const scene = document.getElementById('scene-container');
   if (!scene) return;
 
@@ -69,58 +87,81 @@ export function startRecording() {
   // Move scene offscreen at output dimensions
   expandSceneForCapture(scene, fmt);
 
-  // Create the recording canvas
-  captureCanvas = document.createElement('canvas');
-  captureCanvas.width = fmt.width;
-  captureCanvas.height = fmt.height;
-  captureCtx = captureCanvas.getContext('2d');
+  try {
+    // Create the recording canvas
+    captureCanvas = document.createElement('canvas');
+    captureCanvas.width = fmt.width;
+    captureCanvas.height = fmt.height;
+    captureCtx = captureCanvas.getContext('2d');
 
-  // Get a stream from the canvas
-  captureStream = captureCanvas.captureStream(30);
+    // Get a stream from the canvas
+    captureStream = captureCanvas.captureStream(30);
 
-  const mimeType = getSupportedMimeType();
+    const mimeType = getSupportedMimeType();
 
-  recordedChunks = [];
-  mediaRecorder = new MediaRecorder(captureStream, {
-    mimeType,
-    videoBitsPerSecond: 5000000,
-  });
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(captureStream, {
+      mimeType,
+      videoBitsPerSecond: 5000000,
+    });
 
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data.size > 0) {
-      recordedChunks.push(e.data);
-    }
-  };
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        recordedChunks.push(e.data);
+      }
+    };
 
-  mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = () => {
+      const chunks = recordedChunks.slice();
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+
+      cleanupResources(scene);
+
+      if (chunks.length > 0) {
+        const blob = new Blob(chunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `vntalk-${fmt.width}x${fmt.height}-${Date.now()}.${ext}`;
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      setStatus('');
+    };
+
+    mediaRecorder.onerror = (e) => {
+      console.error('MediaRecorder error:', e.error || e);
+      recording = false;
+      cleanupResources(scene);
+      setStatus('Erreur d\'enregistrement');
+    };
+
+    mediaRecorder.start(100);
+    recording = true;
+
+    // Start the capture loop
+    captureLoop(scene, fmt);
+    setStatus('Enregistrement en cours...');
+  } catch (e) {
+    console.error('Failed to start recording:', e);
     recording = false;
-    // Restore scene to original size
-    restoreScene(scene);
-
-    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-    const blob = new Blob(recordedChunks, { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.download = `vntalk-${fmt.width}x${fmt.height}-${Date.now()}.${ext}`;
-    a.href = url;
-    a.click();
-    URL.revokeObjectURL(url);
-    setStatus('');
-  };
-
-  mediaRecorder.start(100);
-  recording = true;
-
-  // Start the capture loop
-  captureLoop(scene, fmt);
-  setStatus('Enregistrement en cours...');
+    cleanupResources(scene);
+    setStatus('Impossible de démarrer l\'enregistrement');
+  }
 }
 
 export function stopRecording() {
+  if (!recording) return;
+  recording = false;
+
   if (mediaRecorder && mediaRecorder.state === 'recording') {
-    recording = false;
     mediaRecorder.stop();
     setStatus('Traitement...');
+  } else {
+    // MediaRecorder not in recording state — clean up manually
+    const scene = document.getElementById('scene-container');
+    cleanupResources(scene);
+    setStatus('');
   }
 }
 
@@ -146,7 +187,8 @@ async function captureLoop(scene, fmt) {
     // Apply FX effects as canvas post-processing
     applyFXToCanvas(captureCtx, fmt.width, fmt.height, getState());
   } catch (e) {
-    // Silent fail, continue recording
+    console.warn('Capture frame error:', e);
+    // Continue recording — skip this frame
   }
 
   if (recording) {

@@ -218,6 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const stopRecordBtn = document.getElementById('stop-record-btn');
 
   recordBtn.addEventListener('click', () => {
+    // Prevent starting if already recording
+    if (isRecording()) return;
+
     // Enable auto-scroll and start playback automatically
     const autoScrollCheckbox = document.getElementById('auto-scroll');
     if (!autoScrollCheckbox.checked) {
@@ -231,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   stopRecordBtn.addEventListener('click', () => {
+    if (!isRecording()) return;
     stopRecording();
     stopPlayback();
     stopRecordBtn.style.display = 'none';
