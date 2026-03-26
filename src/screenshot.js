@@ -8,10 +8,13 @@ export async function capture() {
   const fmt = getOutputFormat();
 
   try {
+    // Calculate scale factor based on actual element size vs target output size
+    const scaleX = fmt.width / scene.offsetWidth;
+    const scaleY = fmt.height / scene.offsetHeight;
+    const scale = Math.min(scaleX, scaleY);
+
     const canvas = await html2canvas(scene, {
-      width: fmt.width,
-      height: fmt.height,
-      scale: 1,
+      scale: scale,
       useCORS: true,
       backgroundColor: '#000',
     });

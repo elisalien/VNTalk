@@ -20,10 +20,35 @@ export function setOutputFormat(formatId) {
   const fmt = outputFormats[formatId];
   if (!fmt) return;
   currentFormat = formatId;
+  fitSceneToWrapper();
+}
+
+function fitSceneToWrapper() {
+  const fmt = outputFormats[currentFormat];
+  if (!fmt) return;
 
   const scene = sceneContainer();
-  if (scene) {
-    scene.style.aspectRatio = `${fmt.width} / ${fmt.height}`;
+  if (!scene) return;
+
+  scene.style.aspectRatio = `${fmt.width} / ${fmt.height}`;
+
+  const wrapper = scene.parentElement;
+  if (!wrapper) return;
+
+  const wrapperH = wrapper.clientHeight - 32; // padding
+  const wrapperW = wrapper.clientWidth - 32;
+  const containerRatio = fmt.width / fmt.height;
+
+  if (containerRatio < 1) {
+    // Portrait/tall: height is the limiting factor
+    const fitWidth = Math.min(wrapperH * containerRatio, wrapperW);
+    scene.style.maxWidth = fitWidth + 'px';
+  } else if (containerRatio === 1) {
+    // Square: constrain to the smaller dimension
+    const fitSize = Math.min(wrapperH, wrapperW);
+    scene.style.maxWidth = fitSize + 'px';
+  } else {
+    scene.style.maxWidth = '960px';
   }
 }
 
@@ -42,6 +67,9 @@ export function initRenderer() {
   renderBackground(state);
   renderCharacter(state);
   renderDialogueBox(state);
+
+  // Recalculate scene fit on window resize
+  window.addEventListener('resize', () => fitSceneToWrapper());
 }
 
 function renderBackground(state) {

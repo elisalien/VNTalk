@@ -76,18 +76,21 @@ async function captureLoop(scene, fmt) {
   if (!recording) return;
 
   try {
+    // Calculate scale factor based on actual element size vs target output size
+    const scaleX = fmt.width / scene.offsetWidth;
+    const scaleY = fmt.height / scene.offsetHeight;
+    const scale = Math.min(scaleX, scaleY);
+
     // html2canvas captures all CSS filters, overlays, and FX
     const canvas = await html2canvas(scene, {
-      width: fmt.width,
-      height: fmt.height,
-      scale: 1,
+      scale: scale,
       useCORS: true,
       backgroundColor: '#000',
     });
 
     if (!recording) return;
 
-    // Draw the captured frame onto the recording canvas
+    // Draw the captured frame onto the recording canvas, scaling to exact output size
     captureCtx.clearRect(0, 0, fmt.width, fmt.height);
     captureCtx.drawImage(canvas, 0, 0, fmt.width, fmt.height);
   } catch (e) {
