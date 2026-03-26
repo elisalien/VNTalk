@@ -131,6 +131,7 @@ export function syncControlsToState() {
   setText('name-size-value', state.nameSize + 'px');
   setVal('text-color', state.textColor);
   setVal('name-color', state.nameColor);
+  setVal('box-bg-color', state.boxBgColor || '#00000a');
   setVal('line-height', state.lineHeight);
   setText('line-height-value', state.lineHeight);
 
