@@ -1,5 +1,7 @@
 import html2canvas from 'html2canvas';
 import { getOutputFormat } from './renderer.js';
+import { getState } from './state.js';
+import { applyFXToCanvas, FX_OVERLAY_IDS } from './captureFX.js';
 
 let mediaRecorder = null;
 let recordedChunks = [];
@@ -76,28 +78,28 @@ async function captureLoop(scene, fmt) {
   if (!recording) return;
 
   try {
-    // Calculate scale factor based on actual element size vs target output size
-    const scaleX = fmt.width / scene.offsetWidth;
-    const scaleY = fmt.height / scene.offsetHeight;
-    const scale = Math.min(scaleX, scaleY);
-
-    // html2canvas captures all CSS filters, overlays, and FX
+    // Capture at native size — skip FX overlay elements that use mix-blend-mode
+    // and backdrop-filter which html2canvas cannot render
     const canvas = await html2canvas(scene, {
-      scale: scale,
+      scale: 1,
       useCORS: true,
       backgroundColor: '#000',
+      ignoreElements: (el) => FX_OVERLAY_IDS.includes(el.id),
     });
 
     if (!recording) return;
 
-    // Draw the captured frame onto the recording canvas, scaling to exact output size
+    // Draw captured content scaled to output dimensions
     captureCtx.clearRect(0, 0, fmt.width, fmt.height);
     captureCtx.drawImage(canvas, 0, 0, fmt.width, fmt.height);
+
+    // Apply FX effects as canvas post-processing
+    applyFXToCanvas(captureCtx, fmt.width, fmt.height, getState());
   } catch (e) {
     // Silent fail, continue recording
   }
 
-  // Schedule next frame — html2canvas is async so we just loop as fast as it can go
+  // Schedule next frame
   if (recording) {
     requestAnimationFrame(() => captureLoop(scene, fmt));
   }
