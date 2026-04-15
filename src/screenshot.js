@@ -9,27 +9,28 @@ export async function capture() {
 
   const fmt = getOutputFormat();
 
-  // Save original styles
+  // The scene's DOM dimensions are already the export dimensions
+  // (fitSceneToWrapper keeps them in sync). We only need to strip the
+  // preview transform and park the scene offscreen while html2canvas
+  // snapshots it.
   const orig = {
     position: scene.style.position,
     left: scene.style.left,
     top: scene.style.top,
-    width: scene.style.width,
-    maxWidth: scene.style.maxWidth,
-    maxHeight: scene.style.maxHeight,
     zIndex: scene.style.zIndex,
+    transform: scene.style.transform,
+    marginRight: scene.style.marginRight,
+    marginBottom: scene.style.marginBottom,
   };
 
   try {
-    // Temporarily resize scene to exact output dimensions offscreen
-    // so all %, transforms, vw units resolve at the correct pixel sizes
     scene.style.position = 'fixed';
     scene.style.left = '-99999px';
     scene.style.top = '0';
-    scene.style.width = fmt.width + 'px';
-    scene.style.maxWidth = fmt.width + 'px';
-    scene.style.maxHeight = 'none';
     scene.style.zIndex = '-9999';
+    scene.style.transform = 'none';
+    scene.style.marginRight = '0';
+    scene.style.marginBottom = '0';
 
     // Force reflow
     scene.offsetHeight;
@@ -59,9 +60,9 @@ export async function capture() {
     scene.style.position = orig.position;
     scene.style.left = orig.left;
     scene.style.top = orig.top;
-    scene.style.width = orig.width;
-    scene.style.maxWidth = orig.maxWidth;
-    scene.style.maxHeight = orig.maxHeight;
     scene.style.zIndex = orig.zIndex;
+    scene.style.transform = orig.transform;
+    scene.style.marginRight = orig.marginRight;
+    scene.style.marginBottom = orig.marginBottom;
   }
 }

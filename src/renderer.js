@@ -31,33 +31,48 @@ export function setOutputFormat(formatId) {
   fitSceneToWrapper();
 }
 
-function fitSceneToWrapper() {
+/**
+ * Size the scene to its logical (export) dimensions and scale it visually
+ * to fit the wrapper. The scene's DOM box remains at fmt.width × fmt.height
+ * so all child layout (%, cqw, transforms) resolves against a stable target
+ * identical to the export canvas. Only the visual transform changes.
+ *
+ * Negative margins reclaim the layout space the scale(k) transform would
+ * otherwise leave behind, so flex centering stays accurate.
+ *
+ * No-op while recording: the capture pipeline relies on the scene's layout
+ * staying frozen during html2canvas snapshots.
+ */
+export function fitSceneToWrapper() {
+  if (document.body.classList.contains('recording')) return;
+
   const fmt = outputFormats[currentFormat];
   if (!fmt) return;
 
   const scene = sceneContainer();
   if (!scene) return;
 
-  scene.style.aspectRatio = `${fmt.width} / ${fmt.height}`;
-
   const wrapper = scene.parentElement;
   if (!wrapper) return;
 
-  const wrapperH = wrapper.clientHeight - 32; // padding
-  const wrapperW = wrapper.clientWidth - 32;
-  const containerRatio = fmt.width / fmt.height;
+  // Logical dimensions = export dimensions, always.
+  scene.style.width = fmt.width + 'px';
+  scene.style.height = fmt.height + 'px';
 
-  if (containerRatio < 1) {
-    // Portrait/tall: height is the limiting factor
-    const fitWidth = Math.min(wrapperH * containerRatio, wrapperW);
-    scene.style.maxWidth = fitWidth + 'px';
-  } else if (containerRatio === 1) {
-    // Square: constrain to the smaller dimension
-    const fitSize = Math.min(wrapperH, wrapperW);
-    scene.style.maxWidth = fitSize + 'px';
-  } else {
-    scene.style.maxWidth = '960px';
-  }
+  const availW = Math.max(0, wrapper.clientWidth - 32);
+  const availH = Math.max(0, wrapper.clientHeight - 32);
+
+  // Fit by the tighter dimension; never upscale past 1:1.
+  const scale = Math.min(availW / fmt.width, availH / fmt.height, 1);
+  const safeScale = scale > 0 && isFinite(scale) ? scale : 1;
+
+  scene.style.setProperty('--scene-scale', String(safeScale));
+  scene.style.transform = `scale(${safeScale})`;
+
+  // Reclaim the layout space the transform visually removes so flex
+  // centering sees the post-scale footprint.
+  scene.style.marginRight = `${(safeScale - 1) * fmt.width}px`;
+  scene.style.marginBottom = `${(safeScale - 1) * fmt.height}px`;
 }
 
 export function getOutputFormat() {
@@ -76,7 +91,12 @@ export function initRenderer() {
   renderCharacter(state);
   renderDialogueBox(state);
 
-  // Recalculate scene fit on window resize
+  // Apply the initial fit now that the scene exists.
+  fitSceneToWrapper();
+
+  // Recalculate scene fit on window resize. The fit function itself
+  // short-circuits while `body.recording` is set so the capture loop
+  // sees a frozen layout.
   window.addEventListener('resize', () => fitSceneToWrapper());
 }
 
@@ -184,13 +204,15 @@ function renderDialogueBox(state) {
   const nameEl = document.getElementById('dialogue-name');
   const textEl = document.getElementById('dialogue-text');
 
+  // Font sizing uses `cqw` (container query width) so text scales from the
+  // scene width — stable across preview and export, independent of viewport.
   if (nameEl) {
-    nameEl.style.fontSize = `clamp(6px, ${state.nameSize * 0.08}vw, ${state.nameSize}px)`;
+    nameEl.style.fontSize = `clamp(6px, ${state.nameSize * 0.08}cqw, ${state.nameSize}px)`;
     nameEl.style.color = state.nameColor;
   }
 
   if (textEl) {
-    textEl.style.fontSize = `clamp(6px, ${state.fontSize * 0.08}vw, ${state.fontSize}px)`;
+    textEl.style.fontSize = `clamp(6px, ${state.fontSize * 0.08}cqw, ${state.fontSize}px)`;
     textEl.style.color = state.textColor;
     textEl.style.lineHeight = state.lineHeight;
   }

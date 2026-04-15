@@ -11,16 +11,28 @@
 }
 
 #scene-container {
+  /*
+   * The scene's DOM dimensions are ALWAYS the export dimensions (set by JS).
+   * The preview fits the wrapper via `transform: scale()` + negative margins
+   * applied by fitSceneToWrapper(). This guarantees pixel-identity between
+   * what the user sees and what gets exported to video/screenshot.
+   *
+   * `container-type: inline-size` enables `cqw` (container query width)
+   * units inside the scene so text/ornaments size from the scene width
+   * rather than the viewport — critical for correct ratio on export.
+   */
   position: relative;
-  width: 100%;
-  max-width: 960px;
-  max-height: calc(100vh - 48px);
-  aspect-ratio: 16 / 9;
+  width: 1920px;
+  height: 1080px;
   background: #0a0a0f;
   overflow: hidden;
   border: 1px solid #1a1a2a;
   cursor: pointer;
   isolation: isolate;
+  transform-origin: top left;
+  container-type: inline-size;
+  container-name: scene;
+  flex: 0 0 auto;
 }
 
 /* Background layer */
@@ -95,7 +107,7 @@
 #dialogue-box-ornament-br { bottom: -2px; right: 4px; }
 
 #dialogue-name {
-  font-size: clamp(8px, 1.2vw, 14px);
+  font-size: clamp(8px, 1.2cqw, 14px);
   margin-bottom: 6px;
   text-shadow: 0 0 8px rgba(91, 141, 217, 0.4);
   position: relative;
@@ -107,7 +119,7 @@
 }
 
 #dialogue-text {
-  font-size: clamp(7px, 1vw, 12px);
+  font-size: clamp(7px, 1cqw, 12px);
   line-height: 1.8;
   color: #fff;
   min-height: 2em;

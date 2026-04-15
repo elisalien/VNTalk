@@ -1,5 +1,5 @@
 import html2canvas from 'html2canvas';
-import { getOutputFormat } from './renderer.js';
+import { getOutputFormat, fitSceneToWrapper } from './renderer.js';
 import { getState } from './state.js';
 import { applyFXToCanvas, FX_OVERLAY_IDS } from './captureFX.js';
 
@@ -18,45 +18,48 @@ export function isRecording() {
 }
 
 /**
- * Move the scene container offscreen at exact output dimensions so that
- * html2canvas captures pixel-perfect layout (all %, transforms, vw units
- * resolve correctly at 1080×1920 etc.).
+ * Move the scene offscreen and neutralize its preview transform so
+ * html2canvas snapshots it at its true logical (export) dimensions.
+ *
+ * The scene's width/height are already equal to fmt.width/fmt.height
+ * (set by fitSceneToWrapper), so no dimension change is required — we
+ * only strip the visual scale and reposition it out of view.
  */
-function expandSceneForCapture(scene, fmt) {
+function enterCaptureMode(scene) {
   origSceneStyles = {
     position: scene.style.position,
     left: scene.style.left,
     top: scene.style.top,
-    width: scene.style.width,
-    maxWidth: scene.style.maxWidth,
-    maxHeight: scene.style.maxHeight,
     zIndex: scene.style.zIndex,
     visibility: scene.style.visibility,
+    transform: scene.style.transform,
+    marginRight: scene.style.marginRight,
+    marginBottom: scene.style.marginBottom,
   };
 
   scene.style.position = 'fixed';
   scene.style.left = '-99999px';
   scene.style.top = '0';
-  scene.style.width = fmt.width + 'px';
-  scene.style.maxWidth = fmt.width + 'px';
-  scene.style.maxHeight = 'none';
   scene.style.zIndex = '-9999';
   scene.style.visibility = 'visible';
+  scene.style.transform = 'none';
+  scene.style.marginRight = '0';
+  scene.style.marginBottom = '0';
 
-  // Force reflow so the browser computes the new layout
+  // Force reflow so html2canvas sees the neutralized layout.
   scene.offsetHeight;
 }
 
-function restoreScene(scene) {
+function exitCaptureMode(scene) {
   if (!origSceneStyles) return;
   scene.style.position = origSceneStyles.position;
   scene.style.left = origSceneStyles.left;
   scene.style.top = origSceneStyles.top;
-  scene.style.width = origSceneStyles.width;
-  scene.style.maxWidth = origSceneStyles.maxWidth;
-  scene.style.maxHeight = origSceneStyles.maxHeight;
   scene.style.zIndex = origSceneStyles.zIndex;
   scene.style.visibility = origSceneStyles.visibility;
+  scene.style.transform = origSceneStyles.transform;
+  scene.style.marginRight = origSceneStyles.marginRight;
+  scene.style.marginBottom = origSceneStyles.marginBottom;
   origSceneStyles = null;
 }
 
@@ -72,7 +75,11 @@ function cleanupResources(scene) {
   captureCtx = null;
   mediaRecorder = null;
   recordedChunks = [];
-  if (scene) restoreScene(scene);
+  if (scene) exitCaptureMode(scene);
+
+  // Release the recording guard and re-fit the preview to the wrapper.
+  document.body.classList.remove('recording');
+  fitSceneToWrapper();
 }
 
 export function startRecording() {
@@ -84,8 +91,12 @@ export function startRecording() {
 
   const fmt = getOutputFormat();
 
-  // Move scene offscreen at output dimensions
-  expandSceneForCapture(scene, fmt);
+  // Freeze preview layout: from now until cleanup, fitSceneToWrapper is
+  // a no-op, so window resizes can't mutate the scene mid-capture.
+  document.body.classList.add('recording');
+
+  // Park the scene offscreen with its preview transform neutralized.
+  enterCaptureMode(scene);
 
   try {
     // Create the recording canvas
@@ -94,7 +105,10 @@ export function startRecording() {
     captureCanvas.height = fmt.height;
     captureCtx = captureCanvas.getContext('2d');
 
-    // Get a stream from the canvas
+    // Get a stream from the canvas. MediaRecorder samples this canvas at
+    // 30 fps; it will reuse the last-drawn frame if html2canvas hasn't
+    // produced a new one yet — that keeps wall-clock timing correct even
+    // when html2canvas can't sustain 30 fps at 1080p+.
     captureStream = captureCanvas.captureStream(30);
 
     const mimeType = getSupportedMimeType();
@@ -139,7 +153,7 @@ export function startRecording() {
     mediaRecorder.start(100);
     recording = true;
 
-    // Start the capture loop
+    // Kick off the single-flight capture loop.
     captureLoop(scene, fmt);
     setStatus('Enregistrement en cours...');
   } catch (e) {
@@ -165,34 +179,37 @@ export function stopRecording() {
   }
 }
 
+/**
+ * Single-flight capture loop: at most one html2canvas call is in flight
+ * at any time. MediaRecorder samples the canvas at 30 fps independently
+ * — it duplicates the last frame while a new one is being rendered, so
+ * animations play at wall-clock speed even if html2canvas only manages
+ * ~5–10 real frames per second at full export resolution.
+ */
 async function captureLoop(scene, fmt) {
-  if (!recording) return;
+  while (recording) {
+    try {
+      const canvas = await html2canvas(scene, {
+        scale: 1,
+        width: fmt.width,
+        height: fmt.height,
+        useCORS: true,
+        backgroundColor: '#000',
+        ignoreElements: (el) => FX_OVERLAY_IDS.includes(el.id),
+      });
 
-  try {
-    // Scene is already at output dimensions (offscreen) — capture at scale 1
-    const canvas = await html2canvas(scene, {
-      scale: 1,
-      width: fmt.width,
-      height: fmt.height,
-      useCORS: true,
-      backgroundColor: '#000',
-      ignoreElements: (el) => FX_OVERLAY_IDS.includes(el.id),
-    });
+      if (!recording) return;
 
-    if (!recording) return;
+      captureCtx.clearRect(0, 0, fmt.width, fmt.height);
+      captureCtx.drawImage(canvas, 0, 0, fmt.width, fmt.height);
+      applyFXToCanvas(captureCtx, fmt.width, fmt.height, getState());
+    } catch (e) {
+      console.warn('Capture frame error:', e);
+      // Skip this frame; MediaRecorder keeps streaming the last good one.
+    }
 
-    captureCtx.clearRect(0, 0, fmt.width, fmt.height);
-    captureCtx.drawImage(canvas, 0, 0, fmt.width, fmt.height);
-
-    // Apply FX effects as canvas post-processing
-    applyFXToCanvas(captureCtx, fmt.width, fmt.height, getState());
-  } catch (e) {
-    console.warn('Capture frame error:', e);
-    // Continue recording — skip this frame
-  }
-
-  if (recording) {
-    requestAnimationFrame(() => captureLoop(scene, fmt));
+    // Yield to the browser so UI/animations can advance between frames.
+    await new Promise((r) => requestAnimationFrame(r));
   }
 }
 

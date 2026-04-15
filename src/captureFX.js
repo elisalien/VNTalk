@@ -3,9 +3,17 @@
  * html2canvas does NOT support mix-blend-mode or backdrop-filter,
  * so CRT scanlines, vignette, film grain, chromatic aberration, and bloom
  * must be painted manually onto the exported canvas.
+ *
+ * Effect sizes that scale with resolution use `min(w, h)` as their
+ * reference rather than a hard-coded dimension, so visual intensity stays
+ * consistent across aspect ratios (1080×1920 looks the same as 1920×1080).
+ * The baseline (1080) matches the short side of our default 1080p formats.
  */
 
+const FX_REFERENCE = 1080;
+
 export function applyFXToCanvas(ctx, w, h, state) {
+  const ref = Math.min(w, h) || FX_REFERENCE;
   // --- Bloom glow (blur approximation via layered semi-transparent redraw) ---
   if (state.bloom > 0) {
     const bloomAlpha = Math.min(state.bloom / 400, 0.15);
@@ -22,7 +30,7 @@ export function applyFXToCanvas(ctx, w, h, state) {
 
   // --- Scanlines (CRT) ---
   if (state.crtEnabled && state.scanlineOpacity > 0) {
-    const d = Math.max(1, Math.round(state.scanlineDensity * (h / 540)));
+    const d = Math.max(1, Math.round(state.scanlineDensity * (ref / FX_REFERENCE) * 2));
     const o = state.scanlineOpacity / 100;
     ctx.fillStyle = `rgba(0,0,0,${o})`;
     for (let y = d; y < h; y += d * 2) {
@@ -45,7 +53,7 @@ export function applyFXToCanvas(ctx, w, h, state) {
 
   // --- Chromatic Aberration (channel-offset via colored overlay draws) ---
   if (state.chromaticAberration > 0) {
-    const px = Math.round(state.chromaticAberration * (w / 960));
+    const px = Math.round(state.chromaticAberration * (ref / FX_REFERENCE));
     if (px >= 1) {
       ctx.globalCompositeOperation = 'multiply';
       // Red tint shifted right
